@@ -1,4 +1,8 @@
-name: "Master Pipeline Caller — MB Single"
+# ╔══════════════════════════════════════════════════════════════════╗
+# ║  MASTER PIPELINE ORCHESTRATOR (MOBILE SINGLE)                  ║
+# ║  Branch Strategy: test → uat → main                             ║
+# ╚══════════════════════════════════════════════════════════════════╝
+name: "Master Pipeline Orchestrator — MB Single"
 
 on:
   push:
@@ -16,7 +20,7 @@ on:
         type: boolean
         default: true
       dry_run:
-        description: "Preview-only mode (skip deploy/tag push, print PR body)"
+        description: "Preview-only mode (skip deploy/tag push)"
         type: boolean
         default: false
 
@@ -27,17 +31,131 @@ permissions:
   security-events: write
 
 concurrency:
-  group: master-pipeline-mb-single-caller-${{ github.ref }}
+  group: master-pipeline-mb-single-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  master-orchestrator:
-    if: ${{ github.event.repository.name != 'central-workflow' }}
-    name: "Call MB Single Master Orchestrator"
-    # This line connects the tribe's repo to your central "engine"
-    uses: ImplementSprint/central-workflow/.github/workflows/master-pipeline-mb-single.yml@main
+  # ══════════════════════════════════════════════════════════════════
+  # Detect Changes
+  # ══════════════════════════════════════════════════════════════════
+  detect-changes:
+    name: "Detect Changed Files"
+    runs-on: ubuntu-latest
+    outputs:
+      mobile: ${{ steps.filter.outputs.mobile }}
+      shared: ${{ steps.filter.outputs.shared }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect file changes
+        id: filter
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36
+        with:
+          filters: |
+            mobile:
+              - '**'
+            shared:
+              - '.github/**'
+              - 'package.json'
+              - 'app.json'
+              - 'jest.config.js'
+
+  # ══════════════════════════════════════════════════════════════════
+  # Resolve MB Single Configuration
+  # ══════════════════════════════════════════════════════════════════
+  systems-config:
+    name: "Resolve MB Single Configuration"
+    runs-on: ubuntu-latest
+    outputs:
+      system_name: ${{ steps.resolve.outputs.system_name }}
+      working_dir: ${{ steps.resolve.outputs.working_dir }}
+      mobile_stack: ${{ steps.resolve.outputs.mobile_stack }}
+    steps:
+      - name: Resolve MB single config
+        id: resolve
+        env:
+          MB_SINGLE_SYSTEMS_JSON: ${{ vars.MB_SINGLE_SYSTEMS_JSON }}
+        run: |
+          if [ -z "${MB_SINGLE_SYSTEMS_JSON}" ]; then
+            echo "❌ Missing required repository variable MB_SINGLE_SYSTEMS_JSON."
+            exit 1
+          fi
+
+          CONFIG=$(echo "${MB_SINGLE_SYSTEMS_JSON}" | jq -c 'if type == "array" then .[0] else . end')
+          
+          SYSTEM_NAME=$(echo "${CONFIG}" | jq -r '.name')
+          WORKING_DIR=$(echo "${CONFIG}" | jq -r '.dir // "."')
+          MOBILE_STACK=$(echo "${CONFIG}" | jq -r '.mobile_stack // "react-native"')
+
+          echo "system_name=${SYSTEM_NAME}" >> "$GITHUB_OUTPUT"
+          echo "working_dir=${WORKING_DIR}" >> "$GITHUB_OUTPUT"
+          echo "mobile_stack=${MOBILE_STACK}" >> "$GITHUB_OUTPUT"
+
+  # ══════════════════════════════════════════════════════════════════
+  # Mobile Pipeline Execution
+  # ══════════════════════════════════════════════════════════════════
+  mobile-pipeline:
+    name: "${{ needs.systems-config.outputs.system_name }} Pipeline"
+    needs: [detect-changes, systems-config]
+    if: needs.detect-changes.outputs.mobile == 'true' || needs.detect-changes.outputs.shared == 'true'
+    uses: ImplementSprint/central-workflow/.github/workflows/mobile-workflow.yml@main
     with:
-      run_deploy: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.run_deploy == 'true' }}
-      run_promotion: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.run_promotion == 'true' }}
-      dry_run: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' }}
+      system-dir: ${{ needs.systems-config.outputs.working_dir }}
+      system-name: ${{ needs.systems-config.outputs.system_name }}
+      enable-lint: true
+      enable-security-scan: true
+      enable-sonar: true
+      enable-detox: ${{ github.ref == 'refs/heads/uat' }}
+    secrets: inherit
+
+  # ══════════════════════════════════════════════════════════════════
+  # Versioning & Promotion (Mirroring FE Logic)
+  # ══════════════════════════════════════════════════════════════════
+  version-test:
+    name: "Version Tag — TEST"
+    needs: [mobile-pipeline, systems-config]
+    if: always() && github.ref == 'refs/heads/test' && needs.mobile-pipeline.result == 'success'
+    uses: ImplementSprint/central-workflow/.github/workflows/versioning.yml@main
+    with:
+      mode: test
+
+  create-pr-to-uat:
+    name: "Create PR → UAT"
+    needs: [mobile-pipeline, version-test, systems-config]
+    if: always() && github.ref == 'refs/heads/test' && needs.version-test.result == 'success'
+    uses: ImplementSprint/central-workflow/.github/workflows/promotion.yml@main
+    with:
+      pipeline-kind: single
+      direction: test-to-uat
+      system1-name: ${{ needs.systems-config.outputs.system_name }}
+      version-tag: ${{ needs.version-test.outputs.version_tag }}
+      pipeline-result: success
+    secrets:
+      PR_TOKEN: ${{ secrets.GH_PR_TOKEN }}
+
+  # ══════════════════════════════════════════════════════════════════
+  # Summary & Notifications
+  # ══════════════════════════════════════════════════════════════════
+  pipeline-summary:
+    name: "Pipeline Summary"
+    needs: [mobile-pipeline, systems-config]
+    if: always()
+    uses: ImplementSprint/central-workflow/.github/workflows/pipeline-summary.yml@main
+    with:
+      pipeline-kind: single
+      system1-name: ${{ needs.systems-config.outputs.system_name }}
+      system1-result: ${{ needs.mobile-pipeline.result }}
+
+  notify-pipeline:
+    name: "Notify Pipeline Status"
+    needs: [pipeline-summary, mobile-pipeline, systems-config]
+    if: always()
+    uses: ImplementSprint/central-workflow/.github/workflows/notifications.yml@main
+    with:
+      status: ${{ needs.mobile-pipeline.result }}
+      system-dir: "Mobile Single"
+      pipeline-type: "Mobile Master"
     secrets: inherit
