@@ -1,6 +1,6 @@
 # +------------------------------------------------------------------+
-# ¦  REUSABLE: Production Readiness Gate                           ¦
-# ¦  Approval + checklist + audit logging before production       ¦
+#   REUSABLE: Production Readiness Gate                           
+#   Approval + checklist + audit logging before production       
 # +------------------------------------------------------------------+
 name: "Reusable: Production Gate"
 
@@ -38,7 +38,7 @@ permissions:
 
 jobs:
   production-gate:
-    name: "Production Readiness — ${{ inputs.system-dir }}"
+    name: "Production Readiness  ${{ inputs.system-dir }}"
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment:
@@ -54,31 +54,31 @@ jobs:
         id: checklist
         run: |
           echo "+----------------------------------------------+"
-          echo "¦   PRODUCTION READINESS CHECKLIST             ¦"
-          echo "¦----------------------------------------------¦"
-          echo "¦ System:      ${{ inputs.system-dir }}"
-          echo "¦ Type:        ${{ inputs.app-type }}"
-          echo "¦ Branch:      ${{ github.ref_name }}"
-          echo "¦ Commit:      ${{ github.sha }}"
-          echo "¦ Actor:       ${{ github.actor }}"
-          echo "¦ Timestamp:   $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          echo "¦----------------------------------------------¦"
+          echo "   PRODUCTION READINESS CHECKLIST             "
+          echo "----------------------------------------------"
+          echo " System:      ${{ inputs.system-dir }}"
+          echo " Type:        ${{ inputs.app-type }}"
+          echo " Branch:      ${{ github.ref_name }}"
+          echo " Commit:      ${{ github.sha }}"
+          echo " Actor:       ${{ github.actor }}"
+          echo " Timestamp:   $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "----------------------------------------------"
 
           PASS=true
 
           # Check: Must be on main branch
           if [ "${{ github.ref_name }}" != "main" ]; then
-            echo "¦ ? Not on main branch"
+            echo " ? Not on main branch"
             PASS=false
           else
-            echo "¦ ? On main branch"
+            echo " ? On main branch"
           fi
 
           # Check: Must have staging artifacts
-          echo "¦ ? Staging build artifacts exist"
+          echo " ? Staging build artifacts exist"
 
           # Check: Must have passing tests
-          echo "¦ ? All tests passed in pipeline"
+          echo " ? All tests passed in pipeline"
 
           echo "+----------------------------------------------+"
 

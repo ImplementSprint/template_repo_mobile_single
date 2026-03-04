@@ -1,7 +1,7 @@
 # +------------------------------------------------------------------+
-# ¦  REUSABLE: Deploy to Environment                               ¦
-# ¦  Supports web (Vercel), API (container), and mobile (APK)     ¦
-# ¦  Deploys to: test | uat | prod (staging/preprod)              ¦
+#   REUSABLE: Deploy to Environment                               
+#   Supports web (Vercel), API (container), and mobile (APK)     
+#   Deploys to: test | uat | prod (staging/preprod)              
 # +------------------------------------------------------------------+
 name: "Reusable: Deploy to Environment"
 
@@ -76,14 +76,14 @@ jobs:
         id: deploy
         run: |
           echo "+----------------------------------------------+"
-          echo "¦   DEPLOYMENT — ${{ inputs.deploy-environment }}                       ¦"
-          echo "¦----------------------------------------------¦"
-          echo "¦ System:      ${{ inputs.system-name }}"
-          echo "¦ Type:        ${{ inputs.app-type }}"
-          echo "¦ Environment: ${{ inputs.deploy-environment }}"
-          echo "¦ Branch:      ${{ github.ref_name }}"
-          echo "¦ Commit:      ${{ github.sha }}"
-          echo "¦ Timestamp:   $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "   DEPLOYMENT  ${{ inputs.deploy-environment }}                       "
+          echo "----------------------------------------------"
+          echo " System:      ${{ inputs.system-name }}"
+          echo " Type:        ${{ inputs.app-type }}"
+          echo " Environment: ${{ inputs.deploy-environment }}"
+          echo " Branch:      ${{ github.ref_name }}"
+          echo " Commit:      ${{ github.sha }}"
+          echo " Timestamp:   $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           echo "+----------------------------------------------+"
 
           ENV="${{ inputs.deploy-environment }}"
@@ -117,7 +117,7 @@ jobs:
               echo "? Health check passed (attempt $i)"
               exit 0
             fi
-            echo "? Attempt $i: Status $STATUS — retrying in 10s..."
+            echo "? Attempt $i: Status $STATUS  retrying in 10s..."
             sleep 10
           done
           echo "? Health check failed after 5 attempts"

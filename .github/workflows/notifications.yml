@@ -1,6 +1,6 @@
 # +------------------------------------------------------------------+
-# ¦  REUSABLE: Pipeline Notifications                              ¦
-# ¦  Sends failure/success alerts to configured channels          ¦
+#   REUSABLE: Pipeline Notifications                              
+#   Sends failure/success alerts to configured channels          
 # +------------------------------------------------------------------+
 name: "Reusable: Pipeline Notifications"
 
@@ -222,7 +222,7 @@ jobs:
               --arg deploymentUrlsJson '${{ inputs['deployment-urls-json'] }}' \
               --arg details '${{ inputs['error-details'] }}' \
               '((try ($deploymentUrlsJson | fromjson) catch {}) | to_entries | map(select((.key | length) > 0 and ((.value | tostring) | length) > 0))) as $deploymentEntries |
-              ($deploymentEntries | map("• " + .key + ": " + (.value | tostring)) | join("\n")) as $deploymentLines |
+              ($deploymentEntries | map(" " + .key + ": " + (.value | tostring)) | join("\n")) as $deploymentLines |
               ($deploymentEntries | length) as $deploymentCount |
               ($deploymentEntries[0].value // "" | tostring) as $firstDeploymentUrl |
               {
@@ -292,7 +292,7 @@ jobs:
               --argjson envColor ${{ steps.prepare.outputs.env_color }} \
               --arg imageUrl '${{ steps.prepare.outputs.image_url }}' \
               '((try ($deploymentUrlsJson | fromjson) catch {}) | to_entries | map(select((.key | length) > 0 and ((.value | tostring) | length) > 0))) as $deploymentEntries |
-              ($deploymentEntries | map("• " + .key + ": " + (.value | tostring)) | join("\n")) as $deploymentLines |
+              ($deploymentEntries | map(" " + .key + ": " + (.value | tostring)) | join("\n")) as $deploymentLines |
               ($deploymentEntries | length) as $deploymentCount |
               ($deploymentEntries[0].value // "" | tostring) as $firstDeploymentUrl |
               {

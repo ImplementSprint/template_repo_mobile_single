@@ -1,6 +1,6 @@
 # +------------------------------------------------------------------+
-# ¦  REUSABLE: Lint & Code Style                                   ¦
-# ¦  ESLint + Prettier for JS/TS projects                         ¦
+#   REUSABLE: Lint & Code Style                                   
+#   ESLint + Prettier for JS/TS projects                         
 # +------------------------------------------------------------------+
 name: "Reusable: Lint & Code Style"
 

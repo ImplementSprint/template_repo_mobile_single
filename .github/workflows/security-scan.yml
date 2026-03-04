@@ -1,6 +1,6 @@
 # +------------------------------------------------------------------+
-# ¦  REUSABLE: Security Scanning                                   ¦
-# ¦  Dependency audit + license compliance                        ¦
+#   REUSABLE: Security Scanning                                   
+#   Dependency audit + license compliance                        
 # +------------------------------------------------------------------+
 name: "Reusable: Security Scan"
 

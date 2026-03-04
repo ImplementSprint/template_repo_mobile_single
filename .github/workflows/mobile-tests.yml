@@ -1,6 +1,6 @@
 # +------------------------------------------------------------------+
-# ¦  REUSABLE: Mobile Unit Tests (Jest) + Build                    ¦
-# ¦  Called by any tribe's mobile pipeline                         ¦
+#   REUSABLE: Mobile Unit Tests (Jest) + Build                    
+#   Called by any tribe's mobile pipeline                         
 # +------------------------------------------------------------------+
 name: "Reusable: Mobile Unit Tests"
 

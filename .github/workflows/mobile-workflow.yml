@@ -1,8 +1,8 @@
 # +------------------------------------------------------------------+
-# ¦  ORCHESTRATOR: Mobile CI/CD Pipeline                             ¦
-# ¦  Composes reusable workflows: test ? lint ? governance ?       ¦
-# ¦  security ? sonar ? detox ? gradle                             ¦
-# ¦  Includes optional SonarCloud quality scan stage              ¦
+#   ORCHESTRATOR: Mobile CI/CD Pipeline                             
+#   Composes reusable workflows: test ? lint ? governance ?       
+#   security ? sonar ? detox ? gradle                             
+#   Includes optional SonarCloud quality scan stage              
 # +------------------------------------------------------------------+
 name: "Mobile CI/CD Pipeline"
 
@@ -119,7 +119,7 @@ permissions:
 jobs:
   # -- Stage 1A: Unit Tests (Jest) ---------------------------------
   mobile-unit-tests:
-    name: "Mobile — Jest Unit Tests"
+    name: "Mobile  Jest Unit Tests"
     uses: ./.github/workflows/mobile-tests.yml
     with:
       working-directory: ${{ inputs.system-dir }}
@@ -133,7 +133,7 @@ jobs:
 
   # -- Stage 1B: Lint (parallel with tests) ------------------------
   mobile-lint:
-    name: "Mobile — Lint Check"
+    name: "Mobile  Lint Check"
     if: ${{ inputs.enable-lint }}
     uses: ./.github/workflows/lint-check.yml
     with:
@@ -143,7 +143,7 @@ jobs:
 
   # -- Stage 1C: Security Scan (parallel with tests) --------------
   mobile-security:
-    name: "Mobile — Security Scan"
+    name: "Mobile  Security Scan"
     if: ${{ inputs.enable-security-scan }}
     uses: ./.github/workflows/security-scan.yml
     with:
@@ -153,7 +153,7 @@ jobs:
 
   # -- Stage 1D: Governance Checks (parallel with tests/lint/security) -----
   mobile-governance:
-    name: "Mobile — Governance Checks"
+    name: "Mobile  Governance Checks"
     if: ${{ inputs.enable-governance }}
     uses: ./.github/workflows/governance-check.yml
     with:
@@ -165,7 +165,7 @@ jobs:
 
   # -- Stage 1E: SonarCloud Scan ---------------------------------------------
   mobile-sonar:
-    name: "Mobile — SonarCloud Scan"
+    name: "Mobile  SonarCloud Scan"
     needs: [mobile-unit-tests]
     if: ${{ inputs.enable-sonar }}
     uses: ./.github/workflows/sonarcloud-scan.yml
@@ -185,7 +185,7 @@ jobs:
 
   # -- Stage 2: Detox E2E --------------------------------------------------
   mobile-detox:
-    name: "Mobile — Detox E2E"
+    name: "Mobile  Detox E2E"
     needs: [mobile-unit-tests, mobile-lint, mobile-security, mobile-governance, mobile-sonar]
     if: |
       always() &&
@@ -202,7 +202,7 @@ jobs:
 
   # -- Stage 3: Android Gradle Build ---------------------------------------
   mobile-gradle:
-    name: "Mobile — Gradle Build"
+    name: "Mobile  Gradle Build"
     needs: [mobile-unit-tests, mobile-lint, mobile-security, mobile-governance, mobile-sonar, mobile-detox]
     if: |
       always() &&

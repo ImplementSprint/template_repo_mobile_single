@@ -1,6 +1,6 @@
 # +------------------------------------------------------------------+
-# ¦  REUSABLE: Docker Build & Push to GHCR                        ¦
-# ¦  For backend services — builds, tags, scans, and pushes       ¦
+#   REUSABLE: Docker Build & Push to GHCR                        
+#   For backend services  builds, tags, scans, and pushes       
 # +------------------------------------------------------------------+
 name: "Reusable: Docker Build & Registry"
 

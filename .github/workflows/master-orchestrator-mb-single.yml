@@ -1,4 +1,4 @@
-name: "Master Pipeline Orchestrator — MB Single"
+name: "Master Pipeline Orchestrator  MB Single"
 
 on:
   push:
@@ -178,7 +178,7 @@ jobs:
           echo "active_label=${ACTIVE_LABEL}" >> "$GITHUB_OUTPUT"
 
   mobile:
-    name: "Mobile — ${{ matrix.system.name }}"
+    name: "Mobile  ${{ matrix.system.name }}"
     needs: [active-systems]
     if: fromJson(needs.active-systems.outputs.active_count) > 0
     strategy:
@@ -204,7 +204,7 @@ jobs:
     secrets: inherit
 
   version-test:
-    name: "Version Tag — TEST (${{ matrix.system.name }})"
+    name: "Version Tag  TEST (${{ matrix.system.name }})"
     needs: [mobile, active-systems]
     if: >-
       always() &&
@@ -223,7 +223,7 @@ jobs:
       stream: ${{ matrix.system.version_stream }}
 
   deploy-test:
-    name: "TEST — ${{ matrix.system.name }}"
+    name: "TEST  ${{ matrix.system.name }}"
     needs: [mobile, active-systems]
     if: >-
       always() &&
@@ -247,7 +247,7 @@ jobs:
     secrets: inherit
 
   deploy-uat:
-    name: "UAT — ${{ matrix.system.name }}"
+    name: "UAT  ${{ matrix.system.name }}"
     needs: [mobile, active-systems]
     if: >-
       always() &&
@@ -287,7 +287,7 @@ jobs:
     secrets: inherit
 
   deploy-prod:
-    name: "Prod — ${{ matrix.system.name }}"
+    name: "Prod  ${{ matrix.system.name }}"
     needs: [production-gate, active-systems]
     if: >-
       github.ref == 'refs/heads/main' &&
@@ -308,7 +308,7 @@ jobs:
     secrets: inherit
 
   version-main-release:
-    name: "Version Tag — MAIN Release (${{ matrix.system.name }})"
+    name: "Version Tag  MAIN Release (${{ matrix.system.name }})"
     needs: [deploy-prod, active-systems]
     if: >-
       always() &&

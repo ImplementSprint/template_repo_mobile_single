@@ -341,9 +341,9 @@ jobs:
             ] | length
           ')
 
-          EVIDENCE_ROWS=$(echo "${SYSTEMS_JSON}" | jq -r --argjson results "${RESULTS_JSON}" --arg defaultResult "${DEFAULT_RESULT}" '.[] | "| CI — \(.name) | " + ((($results[.name] // "") | tostring) | if length > 0 then . else $defaultResult end) + " |"')
+          EVIDENCE_ROWS=$(echo "${SYSTEMS_JSON}" | jq -r --argjson results "${RESULTS_JSON}" --arg defaultResult "${DEFAULT_RESULT}" '.[] | "| CI  \(.name) | " + ((($results[.name] // "") | tostring) | if length > 0 then . else $defaultResult end) + " |"')
           EVIDENCE_ROWS=$(printf "%s\n| Deployment Links | %s available |" "${EVIDENCE_ROWS}" "${AVAILABLE_LINKS}")
-          VERSION_ROWS=$(echo "${SYSTEMS_JSON}" | jq -r --argjson versions "${VERSIONS_JSON}" '.[] | "| Version — \(.name) | " + ((($versions[.name] // "") | tostring) | if length > 0 then . else "N/A" end) + " |"')
+          VERSION_ROWS=$(echo "${SYSTEMS_JSON}" | jq -r --argjson versions "${VERSIONS_JSON}" '.[] | "| Version  \(.name) | " + ((($versions[.name] // "") | tostring) | if length > 0 then . else "N/A" end) + " |"')
           EVIDENCE_ROWS=$(printf "%s\n%s" "${EVIDENCE_ROWS}" "${VERSION_ROWS}")
 
           RELEASE_VERSION_VALUE="${VERSION_TAG:-N/A}"

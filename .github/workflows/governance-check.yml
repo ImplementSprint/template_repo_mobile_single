@@ -1,7 +1,7 @@
 # +------------------------------------------------------------------+
-# ¦  REUSABLE: Governance Checks                                   ¦
-# ¦  Test execution + coverage gate + artifact upload              ¦
-# ¦  Works for any Node.js project (frontend/backend/mobile)      ¦
+#   REUSABLE: Governance Checks                                   
+#   Test execution + coverage gate + artifact upload              
+#   Works for any Node.js project (frontend/backend/mobile)      
 # +------------------------------------------------------------------+
 name: "Reusable: Governance Checks"
 
@@ -85,7 +85,7 @@ jobs:
             ")
             read -r LINES_COVERAGE FUNCTIONS_COVERAGE BRANCHES_COVERAGE STATEMENTS_COVERAGE <<< "${METRICS}"
 
-            echo "?? Coverage — lines: ${LINES_COVERAGE}%, functions: ${FUNCTIONS_COVERAGE}%, branches: ${BRANCHES_COVERAGE}%, statements: ${STATEMENTS_COVERAGE}%"
+            echo "?? Coverage  lines: ${LINES_COVERAGE}%, functions: ${FUNCTIONS_COVERAGE}%, branches: ${BRANCHES_COVERAGE}%, statements: ${STATEMENTS_COVERAGE}%"
             THRESHOLD=${{ inputs.coverage-threshold }}
             if (( $(echo "$LINES_COVERAGE < $THRESHOLD" | bc -l) )) || \
                (( $(echo "$FUNCTIONS_COVERAGE < $THRESHOLD" | bc -l) )) || \
@@ -97,7 +97,7 @@ jobs:
               echo "? Coverage meets threshold ${THRESHOLD}% for lines/functions/branches/statements"
             fi
           else
-            echo "? coverage/coverage-summary.json not found — failing coverage gate"
+            echo "? coverage/coverage-summary.json not found  failing coverage gate"
             exit 1
           fi
 

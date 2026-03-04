@@ -77,16 +77,16 @@ jobs:
             fi
 
             echo "+------------------------------------------------------+"
-            echo "¦          MASTER PIPELINE SUMMARY                     ¦"
-            echo "¦------------------------------------------------------¦"
-            echo "¦ Repository: ${{ github.repository }}"
-            echo "¦ Branch:     ${{ github.ref_name }}"
-            echo "¦ Commit:     ${{ github.sha }}"
-            echo "¦ Actor:      ${{ github.actor }}"
-            echo "¦ Timestamp:  $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            echo "¦------------------------------------------------------¦"
+            echo "          MASTER PIPELINE SUMMARY                     "
+            echo "------------------------------------------------------"
+            echo " Repository: ${{ github.repository }}"
+            echo " Branch:     ${{ github.ref_name }}"
+            echo " Commit:     ${{ github.sha }}"
+            echo " Actor:      ${{ github.actor }}"
+            echo " Timestamp:  $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "------------------------------------------------------"
 
-            echo "${SYSTEMS_JSON_INPUT}" | jq -r --argjson results "${RESULTS_JSON_INPUT}" '.[] | "¦ " + .name + ":   " + ($results[.name] // "unknown")'
+            echo "${SYSTEMS_JSON_INPUT}" | jq -r --argjson results "${RESULTS_JSON_INPUT}" '.[] | " " + .name + ":   " + ($results[.name] // "unknown")'
             echo "+------------------------------------------------------+"
 
             if [ -n "${OVERALL_RESULT}" ] && [ "${OVERALL_RESULT}" != "success" ] && [ "${OVERALL_RESULT}" != "skipped" ]; then
@@ -112,17 +112,17 @@ jobs:
           fi
 
           echo "+------------------------------------------------------+"
-          echo "¦          MASTER PIPELINE SUMMARY                     ¦"
-          echo "¦------------------------------------------------------¦"
-          echo "¦ Repository: ${{ github.repository }}"
-          echo "¦ Branch:     ${{ github.ref_name }}"
-          echo "¦ Commit:     ${{ github.sha }}"
-          echo "¦ Actor:      ${{ github.actor }}"
-          echo "¦ Timestamp:  $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          echo "¦------------------------------------------------------¦"
-          echo "¦ ${SYSTEM1_NAME}:   ${SYSTEM1_RESULT}"
-          [ -n "${SYSTEM2_NAME}" ] && echo "¦ ${SYSTEM2_NAME}:   ${SYSTEM2_RESULT}"
-          [ -n "${SYSTEM3_NAME}" ] && echo "¦ ${SYSTEM3_NAME}:   ${SYSTEM3_RESULT}"
+          echo "          MASTER PIPELINE SUMMARY                     "
+          echo "------------------------------------------------------"
+          echo " Repository: ${{ github.repository }}"
+          echo " Branch:     ${{ github.ref_name }}"
+          echo " Commit:     ${{ github.sha }}"
+          echo " Actor:      ${{ github.actor }}"
+          echo " Timestamp:  $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "------------------------------------------------------"
+          echo " ${SYSTEM1_NAME}:   ${SYSTEM1_RESULT}"
+          [ -n "${SYSTEM2_NAME}" ] && echo " ${SYSTEM2_NAME}:   ${SYSTEM2_RESULT}"
+          [ -n "${SYSTEM3_NAME}" ] && echo " ${SYSTEM3_NAME}:   ${SYSTEM3_RESULT}"
           echo "+------------------------------------------------------+"
 
           FAILED=false

@@ -1,6 +1,6 @@
 # +------------------------------------------------------------------+
-# ¦  REUSABLE: SonarCloud Quality Gate                             ¦
-# ¦  Works for frontend, backend, and mobile repos                ¦
+#   REUSABLE: SonarCloud Quality Gate                             
+#   Works for frontend, backend, and mobile repos                
 # +------------------------------------------------------------------+
 name: "Reusable: SonarCloud Scan"
 

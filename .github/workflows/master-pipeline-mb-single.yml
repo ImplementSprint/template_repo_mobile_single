@@ -1,4 +1,4 @@
-name: "Master Pipeline Caller — Mobile Single"
+name: "Master Pipeline Caller  Mobile Single"
 
 on:
   push:
