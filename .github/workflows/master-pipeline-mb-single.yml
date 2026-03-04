@@ -1,4 +1,4 @@
-# Template: Mobile Single Pipeline Caller (for other repositories)
+# Template: Mobile Single Pipeline Caller (for other repositories)=
 # Copy this file to: .github/workflows/master-pipeline-mobile-single.yml in the target repo.
 #
 # IMPORTANT:
@@ -41,9 +41,8 @@ jobs:
   master-orchestrator:
     if: ${{ github.event.repository.name != 'central-workflow' }}
     name: "Call Mobile Master Orchestrator"
-    uses: ImplementSprint/central-workflow/.github/workflows/master-pipeline-mobile.yml@main
+    uses: ImplementSprint/central-workflow/.github/workflows/master-pipeline-mb-single.yml@main
     with:
-      pipeline_mode: single
       run_deploy: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.run_deploy == 'true' }}
       run_promotion: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.run_promotion == 'true' }}
       dry_run: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' }}
