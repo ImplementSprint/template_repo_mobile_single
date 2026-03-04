@@ -8,7 +8,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "jest --coverage --ci --passWithNoTests",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx --max-warnings=0",
+    "lint": "eslint . --max-warnings=0",
     "android:prebuild": "expo prebuild --platform android --non-interactive",
     "detox:build": "detox build --configuration android.emu.debug",
     "detox:test": "detox test --configuration android.emu.debug --headless"
@@ -30,5 +30,13 @@
     "jest-expo": "^54.0.17",
     "typescript": "~5.9.2"
   },
-  "private": true
+  "private": true,
+  "jest": {
+    "preset": "jest-expo",
+    "coverageReporters": [
+      "json-summary",
+      "text",
+      "lcov"
+    ]
+  }
 }
