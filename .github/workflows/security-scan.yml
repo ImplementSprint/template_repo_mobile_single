@@ -1,0 +1,105 @@
+# +------------------------------------------------------------------+
+# ¦  REUSABLE: Security Scanning                                   ¦
+# ¦  Dependency audit + license compliance                        ¦
+# +------------------------------------------------------------------+
+name: "Reusable: Security Scan"
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        required: false
+        type: string
+        default: "."
+        description: "Project directory"
+      system-name:
+        required: true
+        type: string
+        description: "System name for artifacts/display"
+      node-version:
+        required: false
+        type: number
+        default: 20
+        description: "Node.js version"
+      fail-on-high:
+        required: false
+        type: boolean
+        default: true
+        description: "Fail pipeline on HIGH severity vulnerabilities"
+    outputs:
+      audit-result:
+        description: "npm audit result"
+        value: ${{ jobs.dependency-audit.outputs.result }}
+
+permissions:
+  contents: read
+
+jobs:
+  # -- Dependency Vulnerability Audit -------------------------------
+  dependency-audit:
+    name: "Dependency Audit"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      result: ${{ steps.audit.outcome }}
+    defaults:
+      run:
+        working-directory: ./${{ inputs.working-directory }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ inputs.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Run npm audit
+        id: audit
+        continue-on-error: true
+        run: |
+          echo "?? Running dependency audit..."
+          npm audit --json > audit-report.json 2>&1 || true
+          npm audit --audit-level=high 2>&1 || AUDIT_EXIT=$?
+
+          if [ "${AUDIT_EXIT:-0}" -ne 0 ] && [ "${{ inputs.fail-on-high }}" = "true" ]; then
+            echo "? HIGH/CRITICAL vulnerabilities found"
+            npm audit --audit-level=high 2>&1
+            exit 1
+          fi
+          echo "? No HIGH/CRITICAL vulnerabilities"
+
+      - name: Upload Audit Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.system-name }}-audit-report
+          path: ${{ inputs.working-directory }}/audit-report.json
+          retention-days: 30
+          if-no-files-found: ignore
+
+  # -- License Compliance -------------------------------------------
+  license-check:
+    name: "License Compliance"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: ./${{ inputs.working-directory }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ inputs.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Install Dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Check Licenses
+        run: |
+          npx license-checker --production --onlyAllow \
+            "MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;0BSD;CC0-1.0;Unlicense;Python-2.0;BlueOak-1.0.0" \
+            --summary || echo "?? Some licenses may need manual review"

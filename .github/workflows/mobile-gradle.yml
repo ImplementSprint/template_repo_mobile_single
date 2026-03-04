@@ -1,0 +1,224 @@
+name: "Reusable: Mobile Gradle Build"
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        required: false
+        type: string
+        default: "."
+        description: "Project directory (e.g. BayaniHub-Mobile, or '.' for root)"
+      system-name:
+        required: true
+        type: string
+        description: "System name for artifacts/display"
+      node-version:
+        required: false
+        type: number
+        default: 20
+        description: "Node.js version"
+      java-version:
+        required: false
+        type: string
+        default: "17"
+        description: "JDK version"
+      project-type:
+        required: false
+        type: string
+        default: "auto"
+        description: "Project type (auto|react-native|kotlin)"
+      gradle-task:
+        required: false
+        type: string
+        default: "assembleDebug"
+        description: "Gradle task to run"
+      enable-docker-build:
+        required: false
+        type: boolean
+        default: false
+        description: "Build and optionally push Docker image"
+      docker-image-name:
+        required: false
+        type: string
+        default: ""
+        description: "Docker image name for GHCR (required when Docker build is enabled)"
+      dockerfile-path:
+        required: false
+        type: string
+        default: "Dockerfile"
+        description: "Path to Dockerfile relative to working-directory"
+      upload-artifact:
+        required: false
+        type: boolean
+        default: true
+        description: "Upload Android build outputs"
+
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+
+jobs:
+  gradle-build:
+    name: "Gradle Android Build"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: ./${{ inputs.working-directory }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Detect project toolchain
+        id: detect
+        run: |
+          INPUT_TYPE="${{ inputs.project-type }}"
+          if [ -z "${INPUT_TYPE}" ]; then
+            INPUT_TYPE="auto"
+          fi
+
+          STACK="${INPUT_TYPE}"
+          if [ "${STACK}" = "auto" ]; then
+            if [ -f "package.json" ]; then
+              STACK="react-native"
+            else
+              STACK="kotlin"
+            fi
+          fi
+
+          if [ -f "yarn.lock" ]; then
+            PM="yarn"
+          elif [ -f "pnpm-lock.yaml" ]; then
+            PM="pnpm"
+          elif [ -f "package-lock.json" ] || [ -f "npm-shrinkwrap.json" ] || [ -f "package.json" ]; then
+            PM="npm"
+          else
+            PM="none"
+          fi
+
+          if [ "${STACK}" = "react-native" ] && [ "${PM}" = "none" ]; then
+            PM="npm"
+          fi
+
+          echo "stack=${STACK}" >> "$GITHUB_OUTPUT"
+          echo "package_manager=${PM}" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node.js ${{ inputs.node-version }} (npm)
+        if: ${{ steps.detect.outputs.stack == 'react-native' && steps.detect.outputs.package_manager == 'npm' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: "npm"
+          cache-dependency-path: |
+            **/package-lock.json
+
+      - name: Setup Node.js ${{ inputs.node-version }} (yarn)
+        if: ${{ steps.detect.outputs.stack == 'react-native' && steps.detect.outputs.package_manager == 'yarn' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: "yarn"
+          cache-dependency-path: |
+            **/yarn.lock
+
+      - name: Setup Node.js ${{ inputs.node-version }} (pnpm)
+        if: ${{ steps.detect.outputs.stack == 'react-native' && steps.detect.outputs.package_manager == 'pnpm' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: "pnpm"
+          cache-dependency-path: |
+            **/pnpm-lock.yaml
+
+      - name: Install Dependencies
+        if: ${{ steps.detect.outputs.stack == 'react-native' }}
+        env:
+          PACKAGE_MANAGER: ${{ steps.detect.outputs.package_manager }}
+        run: |
+          if [ "${PACKAGE_MANAGER}" = "yarn" ]; then
+            corepack enable
+            yarn install --frozen-lockfile --ignore-scripts
+          elif [ "${PACKAGE_MANAGER}" = "pnpm" ]; then
+            corepack enable
+            pnpm install --frozen-lockfile --ignore-scripts
+          else
+            npm ci --ignore-scripts
+          fi
+
+      - name: Ensure Android Native Project
+        if: ${{ steps.detect.outputs.stack == 'react-native' }}
+        run: |
+          if [ ! -d "android" ]; then
+            CI=1 npx expo prebuild --platform android
+          fi
+
+      - name: Resolve Gradle Wrapper Directory
+        id: gradle
+        run: |
+          if [ -f "./gradlew" ]; then
+            GRADLE_DIR="."
+          elif [ -f "android/gradlew" ]; then
+            GRADLE_DIR="android"
+          else
+            WRAPPER_PATH=$(find . -maxdepth 4 -type f -name gradlew | head -n 1)
+            if [ -z "${WRAPPER_PATH}" ]; then
+              echo "? Could not find gradlew in project."
+              exit 1
+            fi
+            GRADLE_DIR=$(dirname "${WRAPPER_PATH}")
+            GRADLE_DIR="${GRADLE_DIR#./}"
+          fi
+
+          echo "gradle_dir=${GRADLE_DIR}" >> "$GITHUB_OUTPUT"
+          echo "? Using gradle wrapper directory: ${GRADLE_DIR}"
+
+      - name: Normalize Kotlin Version
+        run: |
+          if [ -f "${{ steps.gradle.outputs.gradle_dir }}/gradle.properties" ]; then
+            TARGET_PROPS="${{ steps.gradle.outputs.gradle_dir }}/gradle.properties"
+            if grep -q '^kotlinVersion=' "${TARGET_PROPS}"; then
+              sed -i 's/^kotlinVersion=.*/kotlinVersion=2.0.21/' "${TARGET_PROPS}"
+            else
+              echo 'kotlinVersion=2.0.21' >> "${TARGET_PROPS}"
+            fi
+            echo "? kotlinVersion set to 2.0.21"
+          fi
+
+      - name: Setup JDK ${{ inputs.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: ${{ inputs.java-version }}
+
+      - name: Setup Gradle Cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run Gradle Task
+        run: |
+          cd "${{ steps.gradle.outputs.gradle_dir }}"
+          chmod +x gradlew
+          ./gradlew ${{ inputs.gradle-task }} --no-daemon --stacktrace
+
+      - name: Upload Android Artifact
+        if: ${{ inputs.upload-artifact }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.system-name }}-android-build
+          path: |
+            ${{ inputs.working-directory }}/**/app/build/outputs/**/*.apk
+            ${{ inputs.working-directory }}/**/app/build/outputs/**/*.aab
+          retention-days: 14
+
+  docker-build:
+    name: "Docker Build"
+    needs: [gradle-build]
+    if: ${{ inputs.enable-docker-build && inputs.docker-image-name != '' }}
+    uses: ./.github/workflows/docker-build.yml
+    with:
+      working-directory: ${{ inputs.working-directory }}
+      image-name: ${{ inputs.docker-image-name }}
+      dockerfile-path: ${{ inputs.dockerfile-path }}
+      push-image: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+      scan-vulnerabilities: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+      fail-on-vulnerabilities: false

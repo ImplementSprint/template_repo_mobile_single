@@ -1,0 +1,218 @@
+# +------------------------------------------------------------------+
+# ¦  ORCHESTRATOR: Mobile CI/CD Pipeline                             ¦
+# ¦  Composes reusable workflows: test ? lint ? governance ?       ¦
+# ¦  security ? sonar ? detox ? gradle                             ¦
+# ¦  Includes optional SonarCloud quality scan stage              ¦
+# +------------------------------------------------------------------+
+name: "Mobile CI/CD Pipeline"
+
+on:
+  workflow_call:
+    inputs:
+      system-dir:
+        required: false
+        type: string
+        default: "."
+        description: "Project directory (e.g. BayaniHub-Mobile, or '.' for root)"
+      system-name:
+        required: true
+        type: string
+        description: "System name for artifacts/display (e.g. BayaniHub-Mobile)"
+      node-version:
+        required: false
+        type: number
+        default: 20
+        description: "Node.js version"
+      java-version:
+        required: false
+        type: string
+        default: "17"
+        description: "JDK version for Android builds"
+      coverage-threshold:
+        required: false
+        type: number
+        default: 80
+        description: "Minimum code coverage percentage"
+      enable-lint:
+        required: false
+        type: boolean
+        default: true
+        description: "Run lint checks"
+      enable-security-scan:
+        required: false
+        type: boolean
+        default: true
+        description: "Run security scanning"
+      enable-sonar:
+        required: false
+        type: boolean
+        default: true
+        description: "Run SonarCloud scan"
+      enable-governance:
+        required: false
+        type: boolean
+        default: true
+        description: "Run governance checks"
+      build-android:
+        required: false
+        type: boolean
+        default: false
+        description: "Build Android APK"
+      build-variant:
+        required: false
+        type: string
+        default: "assembleRelease"
+        description: "Gradle build variant"
+      enable-gradle:
+        required: false
+        type: boolean
+        default: true
+        description: "Run Gradle Android build"
+      gradle-task:
+        required: false
+        type: string
+        default: "assembleDebug"
+        description: "Gradle task to execute"
+      enable-docker-build:
+        required: false
+        type: boolean
+        default: false
+        description: "Build and optionally push Docker image"
+      docker-image-name:
+        required: false
+        type: string
+        default: ""
+        description: "Docker image name for GHCR (required when Docker build is enabled)"
+      dockerfile-path:
+        required: false
+        type: string
+        default: "Dockerfile"
+        description: "Path to Dockerfile relative to system-dir"
+      enable-detox:
+        required: false
+        type: boolean
+        default: false
+        description: "Run Detox E2E tests"
+      detox-build-command:
+        required: false
+        type: string
+        default: "npx detox build --configuration android.emu.debug"
+        description: "Detox build command"
+      detox-test-command:
+        required: false
+        type: string
+        default: "npx detox test --configuration android.emu.debug --headless"
+        description: "Detox test command"
+    secrets:
+      SONAR_TOKEN:
+        required: false
+      SONAR_PROJECT_KEY:
+        required: false
+      SONAR_ORGANIZATION:
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  # -- Stage 1A: Unit Tests (Jest) ---------------------------------
+  mobile-unit-tests:
+    name: "Mobile — Jest Unit Tests"
+    uses: ./.github/workflows/mobile-tests.yml
+    with:
+      working-directory: ${{ inputs.system-dir }}
+      system-name: ${{ inputs.system-name }}
+      node-version: ${{ inputs.node-version }}
+      java-version: ${{ inputs.java-version }}
+      test-command: "npx jest --coverage --verbose --ci --forceExit"
+      coverage-threshold: ${{ inputs.coverage-threshold }}
+      build-android: ${{ inputs.build-android }}
+      build-variant: ${{ inputs.build-variant }}
+
+  # -- Stage 1B: Lint (parallel with tests) ------------------------
+  mobile-lint:
+    name: "Mobile — Lint Check"
+    if: ${{ inputs.enable-lint }}
+    uses: ./.github/workflows/lint-check.yml
+    with:
+      working-directory: ${{ inputs.system-dir }}
+      system-name: ${{ inputs.system-name }}
+      node-version: ${{ inputs.node-version }}
+
+  # -- Stage 1C: Security Scan (parallel with tests) --------------
+  mobile-security:
+    name: "Mobile — Security Scan"
+    if: ${{ inputs.enable-security-scan }}
+    uses: ./.github/workflows/security-scan.yml
+    with:
+      working-directory: ${{ inputs.system-dir }}
+      system-name: ${{ inputs.system-name }}
+      node-version: ${{ inputs.node-version }}
+
+  # -- Stage 1D: Governance Checks (parallel with tests/lint/security) -----
+  mobile-governance:
+    name: "Mobile — Governance Checks"
+    if: ${{ inputs.enable-governance }}
+    uses: ./.github/workflows/governance-check.yml
+    with:
+      working-directory: ${{ inputs.system-dir }}
+      system-name: ${{ inputs.system-name }}
+      node-version: ${{ inputs.node-version }}
+      test-command: npx jest --coverage --verbose --ci --forceExit
+      coverage-threshold: ${{ inputs.coverage-threshold }}
+
+  # -- Stage 1E: SonarCloud Scan ---------------------------------------------
+  mobile-sonar:
+    name: "Mobile — SonarCloud Scan"
+    needs: [mobile-unit-tests]
+    if: ${{ inputs.enable-sonar }}
+    uses: ./.github/workflows/sonarcloud-scan.yml
+    with:
+      working-directory: ${{ inputs.system-dir }}
+      system-name: ${{ inputs.system-name }}
+      sources-path: .
+      tests-path: tests,e2e
+      sources-exclusions: tests/**,e2e/**,coverage/**,android/**,ios/**,.expo/**,node_modules/**
+      coverage-report-path: coverage/lcov.info
+      coverage-artifact-name: ${{ format('{0}-coverage', inputs.system-name) }}
+      quality-gate-wait: true
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
+      SONAR_ORGANIZATION: ${{ secrets.SONAR_ORGANIZATION }}
+
+  # -- Stage 2: Detox E2E --------------------------------------------------
+  mobile-detox:
+    name: "Mobile — Detox E2E"
+    needs: [mobile-unit-tests, mobile-lint, mobile-security, mobile-governance, mobile-sonar]
+    if: |
+      always() &&
+      inputs.enable-detox &&
+      !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
+    uses: ./.github/workflows/mobile-detox.yml
+    with:
+      working-directory: ${{ inputs.system-dir }}
+      system-name: ${{ inputs.system-name }}
+      node-version: ${{ inputs.node-version }}
+      java-version: ${{ inputs.java-version }}
+      detox-build-command: ${{ inputs.detox-build-command }}
+      detox-test-command: ${{ inputs.detox-test-command }}
+
+  # -- Stage 3: Android Gradle Build ---------------------------------------
+  mobile-gradle:
+    name: "Mobile — Gradle Build"
+    needs: [mobile-unit-tests, mobile-lint, mobile-security, mobile-governance, mobile-sonar, mobile-detox]
+    if: |
+      always() &&
+      inputs.enable-gradle &&
+      !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
+    uses: ./.github/workflows/mobile-gradle.yml
+    with:
+      working-directory: ${{ inputs.system-dir }}
+      system-name: ${{ inputs.system-name }}
+      node-version: ${{ inputs.node-version }}
+      java-version: ${{ inputs.java-version }}
+      gradle-task: ${{ inputs.gradle-task }}
+      enable-docker-build: ${{ inputs.enable-docker-build }}
+      docker-image-name: ${{ inputs.docker-image-name }}
+      dockerfile-path: ${{ inputs.dockerfile-path }}

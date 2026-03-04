@@ -1,4 +1,4 @@
-name: "Master Pipeline - Mobile Single"
+name: "Master Pipeline Caller — Mobile Single"
 
 on:
   push:
@@ -6,54 +6,36 @@ on:
   pull_request:
     branches: [test, uat, main]
   workflow_dispatch:
+    inputs:
+      run_deploy:
+        description: "Run deploy jobs"
+        type: boolean
+        default: true
+      run_promotion:
+        description: "Run PR promotion jobs"
+        type: boolean
+        default: true
+      dry_run:
+        description: "Preview-only mode (skip deploy/tag push, print PR body)"
+        type: boolean
+        default: false
 
 permissions:
-  contents: read
+  contents: write
+  packages: write
+  pull-requests: write
+  security-events: write
 
 concurrency:
-  group: master-pipeline-mobile-single-${{ github.ref }}
+  group: master-pipeline-mb-single-caller-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  quality:
-    name: "Quality Checks"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Install Dependencies
-        run: npm ci
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Unit Tests
-        run: npm test
-
-  android-build:
-    name: "Android Gradle Build"
-    needs: [quality]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
-
-      - name: Ensure Gradle Wrapper Executable
-        run: chmod +x android/gradlew
-
-      - name: Build Debug APK
-        working-directory: android
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+  master-orchestrator:
+    name: "Call Mobile Master Orchestrator"
+    uses: ./.github/workflows/master-orchestrator-mb-single.yml
+    with:
+      run_deploy: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.run_deploy == 'true' }}
+      run_promotion: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.run_promotion == 'true' }}
+      dry_run: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' }}
+    secrets: inherit

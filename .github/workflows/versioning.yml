@@ -1,0 +1,128 @@
+name: "Reusable: Versioning"
+
+on:
+  workflow_call:
+    inputs:
+      mode:
+        required: true
+        type: string
+        description: "Versioning mode: test or release (main is accepted as alias)"
+      stream:
+        required: false
+        type: string
+        default: "global"
+        description: "Version stream key (global keeps legacy test-v/main-v tags)"
+    outputs:
+      version_tag:
+        description: "Resolved version tag"
+        value: ${{ jobs.version.outputs.version_tag }}
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    name: "Create Version Tag"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      version_tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ github.token }}
+
+      - name: Create and Push Tag
+        id: version
+        env:
+          MODE: ${{ inputs.mode }}
+          STREAM: ${{ inputs.stream }}
+        run: |
+          STREAM_KEY=$(echo "${STREAM}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')
+          if [ -z "${STREAM_KEY}" ]; then
+            STREAM_KEY="global"
+          fi
+
+          if [ "${STREAM_KEY}" = "global" ]; then
+            TEST_PREFIX="test-v"
+            MAIN_PREFIX="main-v"
+          else
+            TEST_PREFIX="test-${STREAM_KEY}-v"
+            MAIN_PREFIX="main-${STREAM_KEY}-v"
+          fi
+
+          if [ "${MODE}" = "test" ]; then
+            PREFIX="${TEST_PREFIX}"
+            LATEST=$(git tag -l "${PREFIX}*" | grep -E "^${PREFIX}[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$" | sort -V | tail -n 1)
+
+            if [ -z "${LATEST}" ]; then
+              NEXT_VERSION="1.0.0.0"
+            else
+              RAW_VERSION="${LATEST#${PREFIX}}"
+              IFS='.' read -r MAJOR MINOR PATCH BUILD <<< "${RAW_VERSION}"
+
+              BUILD=$((BUILD + 1))
+              if [ "${BUILD}" -ge 10 ]; then
+                BUILD=0
+                PATCH=$((PATCH + 1))
+              fi
+
+              if [ "${PATCH}" -ge 10 ]; then
+                PATCH=0
+                MINOR=$((MINOR + 1))
+              fi
+
+              if [ "${MINOR}" -ge 10 ]; then
+                MINOR=0
+                MAJOR=$((MAJOR + 1))
+              fi
+
+              NEXT_VERSION="${MAJOR}.${MINOR}.${PATCH}.${BUILD}"
+            fi
+
+            TAG="${PREFIX}${NEXT_VERSION}"
+          elif [ "${MODE}" = "release" ] || [ "${MODE}" = "main" ]; then
+            LATEST_TEST=$(git tag -l "${TEST_PREFIX}*" | grep -E "^${TEST_PREFIX}[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$" | sort -V | tail -n 1)
+            EFFECTIVE_TEST_PREFIX="${TEST_PREFIX}"
+
+            if [ -z "${LATEST_TEST}" ] && [ "${STREAM_KEY}" != "global" ]; then
+              LEGACY_TEST_PREFIX="test-v"
+              LEGACY_LATEST_TEST=$(git tag -l "${LEGACY_TEST_PREFIX}*" | grep -E "^${LEGACY_TEST_PREFIX}[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$" | sort -V | tail -n 1)
+              if [ -n "${LEGACY_LATEST_TEST}" ]; then
+                LATEST_TEST="${LEGACY_LATEST_TEST}"
+                EFFECTIVE_TEST_PREFIX="${LEGACY_TEST_PREFIX}"
+                echo "?? No stream-specific test tag found for '${STREAM_KEY}'. Falling back to legacy '${LEGACY_TEST_PREFIX}*' tags for this release."
+              fi
+            fi
+
+            if [ -z "${LATEST_TEST}" ]; then
+              echo "? No test version tag found for stream '${STREAM_KEY}'. main release tag requires a prior test tag."
+              exit 1
+            fi
+
+            VERSION_FROM_TEST="${LATEST_TEST#${EFFECTIVE_TEST_PREFIX}}"
+            TAG="${MAIN_PREFIX}${VERSION_FROM_TEST}"
+          else
+            echo "? Invalid mode: ${MODE}. Expected test or release (main alias is accepted)."
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git ls-remote --tags origin | grep -q "refs/tags/${TAG}$"; then
+            echo "tag=${TAG}" >> $GITHUB_OUTPUT
+            echo "?? Tag already exists: ${TAG}"
+            exit 0
+          fi
+
+          if [ "${MODE}" = "test" ]; then
+            git tag -a "${TAG}" -m "TEST version ${TAG}"
+          else
+            git tag -a "${TAG}" -m "MAIN release ${TAG}"
+          fi
+
+          git push origin "${TAG}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
