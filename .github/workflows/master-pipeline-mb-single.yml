@@ -32,8 +32,8 @@ concurrency:
 
 jobs:
   master-orchestrator:
-    name: "Call Mobile Master Orchestrator"
-    uses: ./.github/workflows/master-orchestrator-mb-single.yml
+    name: "Call Central Mobile Master Pipeline"
+    uses: ImplementSprint/central-workflow/.github/workflows/master-pipeline-mobile.yml@main
     with:
       run_deploy: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.run_deploy == 'true' }}
       run_promotion: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.run_promotion == 'true' }}
