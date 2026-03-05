@@ -30,13 +30,5 @@
     "jest-expo": "^54.0.17",
     "typescript": "~5.9.2"
   },
-  "private": true,
-  "jest": {
-    "preset": "jest-expo",
-    "coverageReporters": [
-      "json-summary",
-      "text",
-      "lcov"
-    ]
-  }
+  "private": true
 }
