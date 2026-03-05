@@ -167,7 +167,7 @@ jobs:
   mobile-sonar:
     name: "Mobile  SonarCloud Scan"
     needs: [mobile-unit-tests]
-    if: ${{ inputs.enable-sonar && secrets.SONAR_TOKEN != '' && secrets.SONAR_PROJECT_KEY != '' && secrets.SONAR_ORGANIZATION != '' }}
+    if: ${{ inputs.enable-sonar }}
     uses: ./.github/workflows/sonarcloud-scan.yml
     with:
       working-directory: ${{ inputs.system-dir }}
