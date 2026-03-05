@@ -1,10 +1,6 @@
 name: "Master Pipeline Orchestrator  MB Single"
 
 on:
-  push:
-    branches: [test, uat, main]
-  pull_request:
-    branches: [test, uat, main]
   workflow_dispatch:
     inputs:
       run_deploy:
