@@ -37,9 +37,10 @@ jobs:
   master-orchestrator:
     if: ${{ github.event.repository.name != 'central-workflow' }}
     name: "Call Central Mobile Master Pipeline"
-    uses: ImplementSprint/central-workflow/.github/workflows/master-pipeline-mobile.yml@main
+    uses: ImplementSprint/central-workflow/.github/workflows/master-pipeline-mobile.yml@fix/mobile-gradle-permissions
     with:
       run_deploy: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.run_deploy == 'true' }}
       run_promotion: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.run_promotion == 'true' }}
       dry_run: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' }}
+      enable_grafana_k6: false
     secrets: inherit
