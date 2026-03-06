@@ -68,7 +68,7 @@ on:
         default: false
 
 concurrency:
-  group: master-pipeline-mobile-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 permissions:
