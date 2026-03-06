@@ -43,10 +43,4 @@ jobs:
       run_promotion: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.run_promotion == 'true' }}
       dry_run: ${{ github.run_attempt > 1 || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true') }}
       enable_grafana_k6: false
-    secrets:
-      GH_PR_TOKEN: ${{ secrets.GH_PR_TOKEN }}
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
-      SONAR_ORGANIZATION: ${{ secrets.SONAR_ORGANIZATION }}
-      K6_CLOUD_TOKEN: ${{ secrets.K6_CLOUD_TOKEN }}
-      K6_CLOUD_PROJECT_ID: ${{ secrets.K6_CLOUD_PROJECT_ID }}
+    secrets: inherit
