@@ -5,6 +5,7 @@
   },
   "build": {
     "development": {
+      "image": "latest",
       "developmentClient": true,
       "distribution": "internal",
       "android": {
@@ -15,6 +16,7 @@
       }
     },
     "preview": {
+      "image": "latest",
       "distribution": "internal",
       "android": {
         "buildType": "apk"
@@ -24,6 +26,7 @@
       }
     },
     "production": {
+      "image": "latest",
       "android": {
         "buildType": "app-bundle"
       },
