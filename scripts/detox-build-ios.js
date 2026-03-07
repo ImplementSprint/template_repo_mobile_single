@@ -88,18 +88,78 @@ function resolveScheme(workspacePath) {
   return scheme;
 }
 
-function findBuiltApp(productsDir) {
-  const entries = readdirSync(productsDir, { withFileTypes: true });
-  const app = entries.find(
-    (entry) => entry.isDirectory() && entry.name.endsWith('.app') && !entry.name.endsWith('Tests.app'),
-  );
+function shouldIgnoreAppBundle(name) {
+  return /tests?\.app$/iu.test(name) || /uitests?\.app$/iu.test(name);
+}
 
-  if (!app) {
-    console.error('Unable to find a built .app in Debug-iphonesimulator output.');
+function collectAppBundles(rootPath) {
+  if (!existsSync(rootPath)) {
+    return [];
+  }
+
+  const appBundles = [];
+  const pending = [rootPath];
+
+  while (pending.length > 0) {
+    const currentPath = pending.pop();
+    const entries = readdirSync(currentPath, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const entryPath = join(currentPath, entry.name);
+
+      if (entry.name.endsWith('.app')) {
+        if ((entry.isDirectory() || entry.isSymbolicLink()) && !shouldIgnoreAppBundle(entry.name)) {
+          appBundles.push(entryPath);
+        }
+
+        continue;
+      }
+
+      if (entry.isDirectory()) {
+        pending.push(entryPath);
+      }
+    }
+  }
+
+  return appBundles;
+}
+
+function scoreBuiltApp(appPath, scheme) {
+  let score = 0;
+
+  if (appPath.includes('Debug-iphonesimulator')) {
+    score += 100;
+  }
+
+  if (basename(appPath) === `${scheme}.app`) {
+    score += 50;
+  }
+
+  if (!appPath.includes('Release')) {
+    score += 10;
+  }
+
+  return score;
+}
+
+function findBuiltApp(productsRoot, scheme) {
+  const appBundles = collectAppBundles(productsRoot);
+
+  if (appBundles.length === 0) {
+    console.error(`Unable to find a built .app under ${productsRoot}.`);
     process.exit(1);
   }
 
-  return join(productsDir, app.name);
+  const sortedAppBundles = [...appBundles];
+  sortedAppBundles.sort((left, right) => scoreBuiltApp(right, scheme) - scoreBuiltApp(left, scheme));
+  const [bestMatch] = sortedAppBundles;
+
+  if (!bestMatch) {
+    console.error('Unable to find a built .app in Xcode derived data products output.');
+    process.exit(1);
+  }
+
+  return bestMatch;
 }
 
 ensureIosProject();
@@ -128,11 +188,15 @@ run(
   { cwd: rootDir },
 );
 
-const productsDir = join(derivedDataPath, 'Build', 'Products', 'Debug-iphonesimulator');
-const builtAppPath = findBuiltApp(productsDir);
+const productsRoot = join(derivedDataPath, 'Build', 'Products');
+const productsDir = join(productsRoot, 'Debug-iphonesimulator');
+const builtAppPath = findBuiltApp(productsRoot, scheme);
 
-rmSync(detoxAppPath, { recursive: true, force: true });
 mkdirSync(join(productsDir), { recursive: true });
-cpSync(builtAppPath, detoxAppPath, { recursive: true });
+
+if (builtAppPath !== detoxAppPath) {
+  rmSync(detoxAppPath, { recursive: true, force: true });
+  cpSync(builtAppPath, detoxAppPath, { recursive: true });
+}
 
 console.log(`Prepared Detox iOS app at ${basename(detoxAppPath)}`);
