@@ -39,6 +39,8 @@ tests/
 - `npm run test`: Run unit tests with coverage
 - `npm run detox:build`: Build Detox Android binary
 - `npm run detox:test`: Run Detox tests
+- `npm run detox:build:ios`: Build the Detox iOS simulator app
+- `npm run detox:test:ios`: Run Detox tests on the iOS simulator
 - `npm run android:prebuild`: Regenerate Android native code from Expo config
 
 ## Environment

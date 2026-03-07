@@ -16,6 +16,8 @@
     "android:prebuild": "expo prebuild --platform android --non-interactive",
     "detox:build": "detox build --configuration android.emu.debug",
     "detox:test": "detox test --configuration android.emu.debug --headless",
+    "detox:build:ios": "detox build --configuration ios.sim.debug",
+    "detox:test:ios": "detox test --configuration ios.sim.debug --cleanup",
     "test:e2e": "npm run detox:test"
   },
   "detox": {
@@ -29,6 +31,14 @@
         },
         "binaryPath": "android/app/build/outputs/apk/debug/app-debug.apk",
         "build": "node ./scripts/detox-build-android.js"
+      },
+      "ios.sim.debug": {
+        "type": "ios.simulator",
+        "device": {
+          "type": "iPhone 15"
+        },
+        "binaryPath": "ios/build/Build/Products/Debug-iphonesimulator/DetoxApp.app",
+        "build": "node ./scripts/detox-build-ios.js"
       }
     }
   },
