@@ -9,6 +9,7 @@
     "ios:prebuild": "expo prebuild --platform ios --non-interactive",
     "ios:build": "expo run:ios",
     "web": "expo start --web",
+    "postinstall": "node ./scripts/ensure-detox-jest-compat.js",
     "test": "npm run test:unit",
     "test:unit": "jest --coverage --ci --passWithNoTests",
     "lint": "eslint . --max-warnings=0",

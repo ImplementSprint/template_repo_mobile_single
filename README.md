@@ -83,4 +83,5 @@ CI build policy:
 - The central mobile workflow builds Expo apps locally with `expo prebuild`, Gradle, xcodebuild, and Detox.
 - `EXPO_TOKEN`, `EXPO_PROJECT_ID`, `EXPO_OWNER`, `eas.json`, and remote EAS credentials are not required for CI.
 - The Android Detox helper normalizes `android/gradle.properties` so Expo Kotlin version settings stay deterministic in CI.
+- `npm ci` runs a small Detox compatibility hook that backfills `detox/runners/jest/reporter` and `detox/runners/jest/testEnvironment` when the installed Detox version only exposes the older Jest entrypoints.
 - The app must remain TypeScript-only with strict mode enabled.
