@@ -26,7 +26,7 @@
           "avdName": "Pixel_5_API_30"
         },
         "binaryPath": "android/app/build/outputs/apk/debug/app-debug.apk",
-        "build": "cd android && gradlew.bat assembleDebug assembleAndroidTest -DtestBuildType=debug"
+        "build": "node ./scripts/detox-build-android.js"
       }
     }
   },
