@@ -10,6 +10,9 @@
     "android": {
       "package": "com.anonymous.templaterepombsingle"
     },
+    "ios": {
+      "bundleIdentifier": "com.anonymous.templaterepombsingle"
+    },
     "plugins": [
       [
         "expo-build-properties",
