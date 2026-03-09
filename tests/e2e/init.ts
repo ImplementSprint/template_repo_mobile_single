@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /* global beforeAll, beforeEach, afterAll */
 
 import packageJson from '../../package.json';
@@ -7,14 +9,10 @@ import specReporter from 'detox/runners/jest/specReporter';
 import detox from 'detox';
 const config = packageJson.detox;
 
-type GlobalWithDetoxCircus = typeof globalThis & {
-  detoxCircus?: { getEnv: () => { addEventsListener: (listener: unknown) => void } };
-};
+const detoxCircus = Reflect.get(globalThis, 'detoxCircus');
 
-const globalWithDetoxCircus = globalThis as GlobalWithDetoxCircus;
-
-if (globalWithDetoxCircus.detoxCircus) {
-  const environment = globalWithDetoxCircus.detoxCircus.getEnv();
+if (detoxCircus && typeof detoxCircus.getEnv === 'function') {
+  const environment = detoxCircus.getEnv();
 
   environment.addEventsListener(adapter);
   environment.addEventsListener(specReporter);
