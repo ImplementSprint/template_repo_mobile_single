@@ -6,7 +6,7 @@ const config: Config = {
   testMatch: ['<rootDir>/tests/e2e/**/*.e2e.ts'],
   setupFilesAfterEnv: ['<rootDir>/tests/e2e/init.ts'],
   reporters: ['detox/runners/jest/streamlineReporter'],
-  testEnvironment: '<rootDir>/tests/e2e/DetoxJestCircusEnvironment.ts',
+  testEnvironment: '<rootDir>/tests/e2e/DetoxJestCircusEnvironment.cjs',
   verbose: true,
 };
 
