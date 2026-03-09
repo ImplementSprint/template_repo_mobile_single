@@ -1,6 +1,6 @@
-const { spawnSync } = require('node:child_process');
-const { existsSync, readFileSync, writeFileSync } = require('node:fs');
-const { join } = require('node:path');
+import { spawnSync } from 'node:child_process';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 const isWindows = process.platform === 'win32';
 const gradleWrapper = isWindows ? 'gradlew.bat' : './gradlew';
@@ -8,7 +8,7 @@ const androidDir = join(process.cwd(), 'android');
 const gradlePropertiesPath = join(androidDir, 'gradle.properties');
 const kotlinVersion = '2.0.21';
 
-function normalizeGradleProperties() {
+function normalizeGradleProperties(): void {
   if (!existsSync(gradlePropertiesPath)) {
     return;
   }

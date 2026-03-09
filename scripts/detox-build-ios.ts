@@ -1,6 +1,10 @@
-const { spawnSync } = require('node:child_process');
-const { cpSync, existsSync, mkdirSync, readdirSync, rmSync } = require('node:fs');
-const { join, basename } = require('node:path');
+import { spawnSync } from 'node:child_process';
+import { basename, join } from 'node:path';
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
+
+type RunOptions = {
+  cwd?: string;
+};
 
 if (process.platform !== 'darwin') {
   console.error('iOS Detox builds require macOS and Xcode.');
@@ -12,7 +16,7 @@ const iosDir = join(rootDir, 'ios');
 const derivedDataPath = join(iosDir, 'build');
 const detoxAppPath = join(derivedDataPath, 'Build', 'Products', 'Debug-iphonesimulator', 'DetoxApp.app');
 
-function run(command, args, options = {}) {
+function run(command: string, args: string[], options: RunOptions = {}): void {
   const result = spawnSync(command, args, {
     stdio: 'inherit',
     shell: false,
@@ -28,7 +32,7 @@ function run(command, args, options = {}) {
   }
 }
 
-function runAndCapture(command, args, options = {}) {
+function runAndCapture(command: string, args: string[], options: RunOptions = {}): string {
   const result = spawnSync(command, args, {
     encoding: 'utf8',
     shell: false,
@@ -47,20 +51,20 @@ function runAndCapture(command, args, options = {}) {
   return result.stdout || '';
 }
 
-function ensureIosProject() {
+function ensureIosProject(): void {
   if (!existsSync(iosDir)) {
     run('npx', ['expo', 'prebuild', '--platform', 'ios', '--non-interactive'], { cwd: rootDir });
   }
 }
 
-function installPodsIfNeeded() {
+function installPodsIfNeeded(): void {
   const podfilePath = join(iosDir, 'Podfile');
   if (existsSync(podfilePath)) {
     run('npx', ['pod-install', '--project-directory=ios'], { cwd: rootDir });
   }
 }
 
-function findWorkspace() {
+function findWorkspace(): string {
   const entries = readdirSync(iosDir, { withFileTypes: true });
   const workspace = entries.find(
     (entry) => entry.isDirectory() && entry.name.endsWith('.xcworkspace') && entry.name !== 'Pods.xcworkspace',
@@ -74,9 +78,9 @@ function findWorkspace() {
   return join(iosDir, workspace.name);
 }
 
-function resolveScheme(workspacePath) {
+function resolveScheme(workspacePath: string): string {
   const output = runAndCapture('xcodebuild', ['-list', '-json', '-workspace', workspacePath], { cwd: rootDir });
-  const parsed = JSON.parse(output);
+  const parsed = JSON.parse(output) as { workspace?: { schemes?: string[] } };
   const schemes = parsed.workspace?.schemes || [];
   const scheme = schemes.find((candidate) => candidate && !candidate.toLowerCase().includes('pods'));
 
@@ -88,20 +92,24 @@ function resolveScheme(workspacePath) {
   return scheme;
 }
 
-function shouldIgnoreAppBundle(name) {
+function shouldIgnoreAppBundle(name: string): boolean {
   return /tests?\.app$/iu.test(name) || /uitests?\.app$/iu.test(name);
 }
 
-function collectAppBundles(rootPath) {
+function collectAppBundles(rootPath: string): string[] {
   if (!existsSync(rootPath)) {
     return [];
   }
 
-  const appBundles = [];
+  const appBundles: string[] = [];
   const pending = [rootPath];
 
   while (pending.length > 0) {
     const currentPath = pending.pop();
+    if (!currentPath) {
+      break;
+    }
+
     const entries = readdirSync(currentPath, { withFileTypes: true });
 
     for (const entry of entries) {
@@ -124,7 +132,7 @@ function collectAppBundles(rootPath) {
   return appBundles;
 }
 
-function scoreBuiltApp(appPath, scheme) {
+function scoreBuiltApp(appPath: string, scheme: string): number {
   let score = 0;
 
   if (appPath.includes('Debug-iphonesimulator')) {
@@ -142,7 +150,7 @@ function scoreBuiltApp(appPath, scheme) {
   return score;
 }
 
-function findBuiltApp(productsRoot, scheme) {
+function findBuiltApp(productsRoot: string, scheme: string): string {
   const appBundles = collectAppBundles(productsRoot);
 
   if (appBundles.length === 0) {
@@ -192,7 +200,7 @@ const productsRoot = join(derivedDataPath, 'Build', 'Products');
 const productsDir = join(productsRoot, 'Debug-iphonesimulator');
 const builtAppPath = findBuiltApp(productsRoot, scheme);
 
-mkdirSync(join(productsDir), { recursive: true });
+mkdirSync(productsDir, { recursive: true });
 
 if (builtAppPath !== detoxAppPath) {
   rmSync(detoxAppPath, { recursive: true, force: true });
