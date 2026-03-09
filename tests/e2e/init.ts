@@ -3,8 +3,8 @@
 /* global beforeAll, beforeEach, afterAll */
 
 import packageJson from '../../package.json';
-import adapter from 'detox/runners/jest/adapter';
-import specReporter from 'detox/runners/jest/specReporter';
+import adapter from 'detox/runners/jest/adapter.js';
+import specReporter from 'detox/runners/jest/specReporter.js';
 
 import detox from 'detox';
 const config = packageJson.detox;

@@ -1,7 +1,7 @@
 // @ts-nocheck
 
 import jestEnvironmentNode from 'jest-environment-node';
-import CircusTestEventListeners from 'detox/runners/jest/CircusTestEventListeners';
+import CircusTestEventListeners from 'detox/runners/jest/CircusTestEventListeners.js';
 
 const NodeEnvironment =
   jestEnvironmentNode.TestEnvironment || jestEnvironmentNode.default || jestEnvironmentNode;

@@ -96,6 +96,14 @@ function shouldIgnoreAppBundle(name: string): boolean {
   return /tests?\.app$/iu.test(name) || /uitests?\.app$/iu.test(name);
 }
 
+function isCollectableAppBundle(name: string, isDirectoryOrSymlink: boolean): boolean {
+  return name.endsWith('.app') && isDirectoryOrSymlink && !shouldIgnoreAppBundle(name);
+}
+
+function shouldTraverseDirectory(name: string, isDirectory: boolean): boolean {
+  return isDirectory && !name.endsWith('.app');
+}
+
 function collectAppBundles(rootPath: string): string[] {
   if (!existsSync(rootPath)) {
     return [];
@@ -114,16 +122,14 @@ function collectAppBundles(rootPath: string): string[] {
 
     for (const entry of entries) {
       const entryPath = join(currentPath, entry.name);
+      const isDirectoryOrSymlink = entry.isDirectory() || entry.isSymbolicLink();
 
-      if (entry.name.endsWith('.app')) {
-        if ((entry.isDirectory() || entry.isSymbolicLink()) && !shouldIgnoreAppBundle(entry.name)) {
-          appBundles.push(entryPath);
-        }
-
+      if (isCollectableAppBundle(entry.name, isDirectoryOrSymlink)) {
+        appBundles.push(entryPath);
         continue;
       }
 
-      if (entry.isDirectory()) {
+      if (shouldTraverseDirectory(entry.name, entry.isDirectory())) {
         pending.push(entryPath);
       }
     }
