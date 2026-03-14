@@ -1,12 +1,15 @@
 /* global beforeAll, beforeEach, afterAll */
 
+const packageJson = require('../../package.json');
+const adapter = require('detox/runners/jest/adapter.js');
+const specReporter = require('detox/runners/jest/specReporter.js');
 const detox = require('detox');
-const config = require('../../package.json').detox;
-const adapter = require('detox/runners/jest/adapter');
-const specReporter = require('detox/runners/jest/specReporter');
 
-if (globalThis.detoxCircus) {
-  const environment = globalThis.detoxCircus.getEnv();
+const config = packageJson.detox;
+const detoxCircus = Reflect.get(globalThis, 'detoxCircus');
+
+if (detoxCircus && typeof detoxCircus.getEnv === 'function') {
+  const environment = detoxCircus.getEnv();
 
   environment.addEventsListener(adapter);
   environment.addEventsListener(specReporter);
@@ -16,7 +19,7 @@ beforeAll(async () => {
   await detox.init(config);
 }, 300000);
 
-beforeEach(async () => {
+beforeEach(async () => { 
   try {
     await adapter.beforeEach();
   } catch (error) {
