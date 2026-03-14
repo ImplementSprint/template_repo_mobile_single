@@ -8,6 +8,7 @@ const androidDir = join(process.cwd(), 'android');
 const gradlePropertiesPath = join(androidDir, 'gradle.properties');
 const gradleWrapperPath = join(androidDir, gradleWrapper);
 const kotlinVersion = '2.0.21';
+const gradleTaskArgs = ['assembleDebug', 'assembleAndroidTest', '-DtestBuildType=debug'];
 
 function run(command: string, args: string[], cwd = process.cwd()): void {
   const result = spawnSync(command, args, {
@@ -34,6 +35,16 @@ function ensureAndroidProject(): void {
   }
 }
 
+function runGradleBuild(): void {
+  if (isWindows) {
+    run(gradleWrapper, gradleTaskArgs, androidDir);
+    return;
+  }
+
+  run('chmod', ['+x', './gradlew'], androidDir);
+  run('bash', ['./gradlew', ...gradleTaskArgs], androidDir);
+}
+
 function normalizeGradleProperties(): void {
   if (!existsSync(gradlePropertiesPath)) {
     return;
@@ -53,4 +64,4 @@ function normalizeGradleProperties(): void {
 ensureAndroidProject();
 normalizeGradleProperties();
 
-run(gradleWrapper, ['assembleDebug', 'assembleAndroidTest', '-DtestBuildType=debug'], androidDir);
+runGradleBuild();
