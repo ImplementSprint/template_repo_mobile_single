@@ -26,21 +26,39 @@
   "detox": {
     "testRunner": "jest",
     "runnerConfig": "tests/e2e/jest.config.ts",
-    "configurations": {
-      "android.emu.debug": {
+    "apps": {
+      "android.debug": {
+        "type": "android.apk",
+        "binaryPath": "android/app/build/outputs/apk/debug/app-debug.apk"
+      },
+      "ios.debug": {
+        "type": "ios.app",
+        "binaryPath": "ios/build/Build/Products/Debug-iphonesimulator/DetoxApp.app"
+      }
+    },
+    "devices": {
+      "android.emulator": {
         "type": "android.emulator",
         "device": {
           "avdName": "Pixel_5_API_30"
-        },
-        "binaryPath": "android/app/build/outputs/apk/debug/app-debug.apk",
-        "build": "tsx ./scripts/detox-build-android.ts"
+        }
       },
-      "ios.sim.debug": {
+      "ios.simulator": {
         "type": "ios.simulator",
         "device": {
           "type": "iPhone 15"
-        },
-        "binaryPath": "ios/build/Build/Products/Debug-iphonesimulator/DetoxApp.app",
+        }
+      }
+    },
+    "configurations": {
+      "android.emu.debug": {
+        "device": "android.emulator",
+        "app": "android.debug",
+        "build": "tsx ./scripts/detox-build-android.ts"
+      },
+      "ios.sim.debug": {
+        "device": "ios.simulator",
+        "app": "ios.debug",
         "build": "tsx ./scripts/detox-build-ios.ts"
       }
     }
