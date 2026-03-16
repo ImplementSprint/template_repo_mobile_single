@@ -2,11 +2,13 @@ import type { Config } from 'jest';
 
 const config: Config = {
   rootDir: '../..',
+  maxWorkers: 1,
   testTimeout: 120000,
   testMatch: ['<rootDir>/tests/e2e/**/*.e2e.ts'],
-  setupFilesAfterEnv: ['<rootDir>/tests/e2e/init.cjs'],
-  reporters: ['detox/runners/jest/streamlineReporter'],
-  testEnvironment: '<rootDir>/tests/e2e/DetoxJestCircusEnvironment.cjs',
+  reporters: ['detox/runners/jest/reporter'],
+  globalSetup: 'detox/runners/jest/globalSetup',
+  globalTeardown: 'detox/runners/jest/globalTeardown',
+  testEnvironment: 'detox/runners/jest/testEnvironment',
   verbose: true,
 };
 

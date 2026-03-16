@@ -24,8 +24,15 @@
     "test:e2e": "npm run detox:test"
   },
   "detox": {
-    "testRunner": "jest",
-    "runnerConfig": "tests/e2e/jest.config.ts",
+    "testRunner": {
+      "$0": "jest",
+      "args": {
+        "config": "tests/e2e/jest.config.ts",
+        "_": [
+          "tests/e2e"
+        ]
+      }
+    },
     "apps": {
       "android.debug": {
         "type": "android.apk",
