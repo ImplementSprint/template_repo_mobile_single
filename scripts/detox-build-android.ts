@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const isWindows = process.platform === 'win32';
@@ -7,6 +7,8 @@ const gradleWrapper = isWindows ? 'gradlew.bat' : './gradlew';
 const androidDir = join(process.cwd(), 'android');
 const gradlePropertiesPath = join(androidDir, 'gradle.properties');
 const gradleWrapperPath = join(androidDir, gradleWrapper);
+const debugApkDir = join(androidDir, 'app', 'build', 'outputs', 'apk', 'debug');
+const expectedDebugApkPath = join(debugApkDir, 'app-debug.apk');
 const kotlinVersion = '2.0.21';
 const gradleTaskArgs = ['assembleDebug', 'assembleAndroidTest', '-DtestBuildType=debug'];
 
@@ -45,6 +47,34 @@ function runGradleBuild(): void {
   run('bash', ['./gradlew', ...gradleTaskArgs], androidDir);
 }
 
+function ensureExpectedDebugApk(): void {
+  if (existsSync(expectedDebugApkPath)) {
+    return;
+  }
+
+  if (!existsSync(debugApkDir)) {
+    console.error(`Missing APK output directory: ${debugApkDir}`);
+    process.exit(1);
+  }
+
+  const debugApkCandidates = readdirSync(debugApkDir)
+    .filter((fileName) => fileName.endsWith('.apk'))
+    .sort();
+
+  const [firstCandidate] = debugApkCandidates;
+
+  if (!firstCandidate) {
+    console.error(`No debug APK found under: ${debugApkDir}`);
+    process.exit(1);
+  }
+
+  const candidatePath = join(debugApkDir, firstCandidate);
+
+  mkdirSync(debugApkDir, { recursive: true });
+  copyFileSync(candidatePath, expectedDebugApkPath);
+  console.log(`Normalized debug APK for Detox: ${firstCandidate} -> app-debug.apk`);
+}
+
 function normalizeGradleProperties(): void {
   if (!existsSync(gradlePropertiesPath)) {
     return;
@@ -65,3 +95,4 @@ ensureAndroidProject();
 normalizeGradleProperties();
 
 runGradleBuild();
+ensureExpectedDebugApk();
