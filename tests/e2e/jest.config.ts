@@ -6,7 +6,7 @@ const config: Config = {
   testTimeout: 120000,
   testMatch: ['<rootDir>/tests/e2e/**/*.e2e.ts'],
   reporters: ['detox/runners/jest/reporter'],
-  globalSetup: 'detox/runners/jest/globalSetup',
+  globalSetup: '<rootDir>/tests/e2e/globalSetup.cjs',
   globalTeardown: 'detox/runners/jest/globalTeardown',
   testEnvironment: 'detox/runners/jest/testEnvironment',
   verbose: true,
