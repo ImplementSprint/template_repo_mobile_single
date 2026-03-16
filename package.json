@@ -36,11 +36,13 @@
     "apps": {
       "android.debug": {
         "type": "android.apk",
-        "binaryPath": "android/app/build/outputs/apk/debug/app-debug.apk"
+        "binaryPath": "android/app/build/outputs/apk/debug/app-debug.apk",
+        "build": "tsx ./scripts/detox-build-android.ts"
       },
       "ios.debug": {
         "type": "ios.app",
-        "binaryPath": "ios/build/Build/Products/Debug-iphonesimulator/DetoxApp.app"
+        "binaryPath": "ios/build/Build/Products/Debug-iphonesimulator/DetoxApp.app",
+        "build": "tsx ./scripts/detox-build-ios.ts"
       }
     },
     "devices": {
@@ -60,13 +62,11 @@
     "configurations": {
       "android.emu.debug": {
         "device": "android.emulator",
-        "app": "android.debug",
-        "build": "tsx ./scripts/detox-build-android.ts"
+        "app": "android.debug"
       },
       "ios.sim.debug": {
         "device": "ios.simulator",
-        "app": "ios.debug",
-        "build": "tsx ./scripts/detox-build-ios.ts"
+        "app": "ios.debug"
       }
     }
   },
