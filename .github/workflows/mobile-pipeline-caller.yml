@@ -102,7 +102,7 @@ permissions:
 
 jobs:
   call-orchestrator:
-    uses: ImplementSprint/central-workflow/.github/workflows/master-pipeline-mobile.yml@main
+    uses: ImplementSprint/central-workflow/.github/workflows/master-pipeline-mobile.yml@fix/mobile-detox-apk-restore-20260319
     with:
       pipeline_mode: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.pipeline_mode || 'auto' }}
       enable_lint: ${{ github.event_name == 'workflow_dispatch' && fromJSON(github.event.inputs.enable_lint || 'true') || true }}

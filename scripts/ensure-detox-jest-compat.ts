@@ -1,7 +1,7 @@
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
 
-function resolveDetoxDir() {
+function resolveDetoxDir(): string | null {
   try {
     return path.dirname(require.resolve('detox/package.json'));
   } catch {
@@ -9,7 +9,7 @@ function resolveDetoxDir() {
   }
 }
 
-function ensureFile(filePath, content) {
+function ensureFile(filePath: string, content: string): boolean {
   if (fs.existsSync(filePath)) {
     return false;
   }
@@ -18,7 +18,7 @@ function ensureFile(filePath, content) {
   return true;
 }
 
-function main() {
+function main(): void {
   const detoxDir = resolveDetoxDir();
 
   if (!detoxDir) {

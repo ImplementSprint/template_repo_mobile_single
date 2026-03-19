@@ -96,3 +96,6 @@ CI build policy:
 - The Android Detox helper normalizes `android/gradle.properties` so Expo Kotlin version settings stay deterministic in CI.
 - `npm ci` runs a small Detox compatibility hook that backfills `detox/runners/jest/reporter` and `detox/runners/jest/testEnvironment` when the installed Detox version only exposes the older Jest entrypoints.
 - The app must remain TypeScript-only with strict mode enabled.
+
+
+this is for testing
